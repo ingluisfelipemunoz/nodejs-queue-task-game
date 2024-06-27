@@ -13,16 +13,25 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+
   app:
     build: .
     depends_on:
       - postgres
+      - redis
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: dbtest
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "3000:3000"
     volumes:

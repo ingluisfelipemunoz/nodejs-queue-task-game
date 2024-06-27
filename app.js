@@ -4,9 +4,21 @@ const { Pool } = require("pg");
 
 const app = express();
 app.use(express.json());
+const redisHost = process.env.REDIS_HOST || "localhost";
+const redisPort = process.env.REDIS_PORT || 6379;
 
 // queue
-const playerQueue = new Queue("playerQueue");
+const playerQueue = new Queue("playerQueue", {
+  redis: {
+    host: redisHost,
+    port: redisPort,
+  },
+});
+
+playerQueue
+  .isReady()
+  .then(() => console.log("Connected to Redis"))
+  .catch((err) => console.error("Redis connection error:", err));
 
 // db connection
 const pool = new Pool({
@@ -16,6 +28,11 @@ const pool = new Pool({
   password: process.env.POSTGRES_PASSWORD,
   port: process.env.POSTGRES_PORT,
 });
+
+pool
+  .connect()
+  .then(() => console.log("Connected to PostgreSQL"))
+  .catch((err) => console.error("PostgreSQL connection error:", err.stack));
 
 // db functions //todo: add the functions and connection to otherss files
 async function addPlayerToDB(player) {
@@ -43,9 +60,13 @@ async function addPlayer(player) {
   const playerId = await addPlayerToDB(player);
   console.log("data inserted", playerId);
   console.log("adding job");
-  const job = await playerQueue.add({ ...player, id: playerId });
-  console.log("job added");
-  return job.id;
+  try {
+    const job = await playerQueue.add({ ...player, id: playerId });
+    console.log("Player added to queue with job ID:", job.id);
+    return job.id;
+  } catch (error) {
+    console.error("Error adding player to queue:", error);
+  }
 }
 
 // process player turns
