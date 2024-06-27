@@ -96,7 +96,11 @@ app.post("/addPlayer", async (req, res) => {
   const jobId = await addPlayer(player);
   res.send({ message: `Player ${player.name} added to the queue.`, jobId });
 });
-
+/** Curl
+ curl -X POST http://localhost:3000/performAction \
+-H "Content-Type: application/json" \
+-d '{"playerName": "felipe", "action": "jump"}'
+ */
 app.post("/performAction", async (req, res) => {
   const { playerName, action } = req.body;
   const jobs = await playerQueue.getJobs(["waiting", "active"]);
@@ -113,6 +117,9 @@ app.post("/performAction", async (req, res) => {
     res.status(404).send(`Player ${playerName} not found in the queue.`);
   }
 });
+/** CURL
+curl http://localhost:3000/jobStatus/12345
+ */
 app.get("/jobStatus/:jobId", async (req, res) => {
   const { jobId } = req.params;
   const job = await playerQueue.getJob(jobId);
